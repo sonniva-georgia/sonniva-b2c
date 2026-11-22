@@ -21,8 +21,8 @@ return [
         'iban' => env('BOG_IBAN'),
     ],
     'pcb' => [
-        'base_url' => env('PCB_TEST_URL', 'https://3dss2test.quipu.de:8000'),
-        'merchant_id' => env('PCB_TEST_MERCHANT_ID'),
+        'base_url' => env('PCB_API_URL', 'https://3dss2test.quipu.de:8000'),
+        'merchant_id' => env('PCB_MERCHANT_ID'),
         'ca_path'   => storage_path('app/private/pcb-certs/ca.pem'),
         'cert_path' => storage_path('app/private/pcb-certs/cert.pem'),
         'key_path'  => storage_path('app/private/pcb-certs/key.pem'),
