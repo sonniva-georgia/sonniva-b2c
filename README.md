@@ -48,25 +48,7 @@ Customers browse the catalog, add items to the cart and pay online or by invoice
 
 ## 2. Run it locally (macOS)
 
-### 2.1 Install the tools
-
-```bash
-# PHP, Composer, MySQL, Redis
-brew install php@8.4 composer mysql redis
-brew services start php@8.4
-brew services start mysql
-brew services start redis
-
-# PHP Redis extension (the app uses the phpredis client)
-pecl install redis
-php -m | grep -E "redis|intl|gd|bcmath|exif|pdo_mysql"   # all six must be listed
-
-# Node 22 (same version as CI)
-brew install nvm      # then follow the printed instructions to add nvm to your shell
-nvm install 22
-```
-
-### 2.2 Get the code
+### 2.1 Get the code
 
 ```bash
 git clone git@github.com:sonniva-georgia/sonniva-sales.git
@@ -76,7 +58,7 @@ composer install
 npm install            # also downloads the Chrome build Puppeteer uses for PDF invoices
 ```
 
-### 2.3 Configure
+### 2.2 Configure
 
 ```bash
 cp .env.example .env
@@ -85,7 +67,9 @@ php artisan key:generate
 
 Fill in the empty values in `.env`. See [Environment variables](#3-environment-variables) for what each one does and who to ask for it. **Never commit `.env`.**
 
-### 2.4 Database
+Run `php artisan ziggy:generate` before the first start, and again after adding or renaming routes. `resources/js/ziggy.js` is generated and git-ignored, so pages fail with an import error until it exists.
+
+### 2.3 Database
 
 ```bash
 mysql -u root -e "CREATE DATABASE sales_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
@@ -95,7 +79,7 @@ php artisan storage:link
 
 Now load data. There are two ways:
 
-**A. Database dump from production (recommended).** Ask the project owner for a recent dump with personal customer data removed, then:
+**A. Database dump from production (recommended).** Ask the Director for a recent dump with personal customer data removed, then:
 
 ```bash
 mysql -u root sales_db < dump.sql
@@ -122,49 +106,11 @@ php artisan localize:import database/localization/item_descriptions.json
 php artisan localize:import database/localization/items_name_batch1.json   # repeat for every items_name_batch*.json
 ```
 
-### 2.5 Create an admin user
-
-```bash
-php artisan tinker
->>> \App\Models\User::factory()->create(['role' => 'admin', 'email' => 'admin@example.test']);
-```
-
-Log in at `/login` with `admin@example.test` / `password`. The admin panel is at `/admin`.
-
-### 2.6 Start the app
-
-```bash
-php artisan ziggy:generate     # first run only, and again after adding/renaming routes
-composer run dev
-```
-
-`composer run dev` starts four processes together:
-
-| Process | What it does |
-|---|---|
-| `php artisan serve` | the app on **http://127.0.0.1:8000** |
-| `php artisan queue:listen` | runs queued jobs (order emails, BC orders, SMS) |
-| `php artisan pail` | live log output |
-| `npm run dev` | Vite dev server with hot reload |
-
-> `resources/js/ziggy.js` is generated and git-ignored. If the page fails with an import error for `ziggy.js`, run `php artisan ziggy:generate`.
-
-SSR is not needed locally. To test it: `composer run dev:ssr`.
-
-### 2.7 Useful local URLs
-
-| URL | What |
-|---|---|
-| `/` | the store |
-| `/admin` | admin panel (role `admin` / `manager` / `pricing_manager`) |
-| `/horizon` | queue dashboard (needs `php artisan horizon` running instead of `queue:listen`) |
-| `/up` | health check |
-
 ---
 
 ## 3. Environment variables
 
-`.env.example` lists every key the app reads. Non-secret defaults are filled in; secrets are empty. **Credentials are never stored in git or in this README** — ask the project owner (see [Ownership & access](#14-ownership--access)).
+`.env.example` lists every key the app reads. Non-secret defaults are filled in; secrets are empty. **Credentials are never stored in git or in this README** — ask the Director (see [Ownership & access](#14-ownership--access)).
 
 | Keys | Used for | Needed locally? |
 |---|---|---|
@@ -420,10 +366,10 @@ All in the [sonniva-georgia](https://github.com/sonniva-georgia) GitHub organiza
 
 | What | Owner / who to ask |
 |---|---|
-| GitHub organization `sonniva-georgia` | _fill in_ |
-| Production server (DigitalOcean) | _fill in_ |
-| Domain & DNS (`sonniva.ge`) | _fill in_ |
-| Business Central API app (Azure) | _fill in_ |
-| Bank merchant accounts (TBC / BOG / PCB) | _fill in_ |
-| OnWay, SMS Office, Google accounts | _fill in_ |
-| Production `.env` and database backups | _fill in_ |
+| GitHub organization `sonniva-georgia` | Director |
+| Production server (DigitalOcean) | Director |
+| Domain & DNS (`sonniva.ge`) | Director |
+| Business Central API app (Azure) | Director |
+| Bank merchant accounts (TBC / BOG / PCB) | Director |
+| OnWay, SMS Office, Google accounts | Director |
+| Production `.env` and database backups | Director |
