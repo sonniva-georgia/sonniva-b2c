@@ -6,6 +6,7 @@
     "This phone number is already registered.": "ეს ტელეფონის ნომერი უკვე რეგისტრირებულია.",
     "This phone number is not registered.": "ეს ტელეფონის ნომერი რეგისტრირებული არ არის.",
     "This tax ID is already registered to another customer.": "ეს საიდენტიფიკაციო ნომერი უკვე რეგისტრირებულია სხვა მომხმარებელზე.",
+    "Registration could not be completed. Please try again.": "რეგისტრაცია ვერ დასრულდა. გთხოვთ, სცადოთ ხელახლა.",
     "Current password is incorrect.": "მიმდინარე პაროლი არასწორია.",
     "The OTP code is required.": "ვერიფიკაციის კოდის ველი აუცილებელია.",
     "The OTP code must be 6-digit.": "ვერიფიკაციის კოდი უნდა შედგებოდეს 6 ციფრისგან.",

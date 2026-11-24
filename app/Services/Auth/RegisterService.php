@@ -6,6 +6,7 @@ use App\Models\OtpVerification;
 use App\Models\User;
 use App\Services\BusinessCentralService;
 use App\Services\SmsService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Propaganistas\LaravelPhone\PhoneNumber;
 
@@ -198,6 +199,33 @@ class RegisterService
     | User
     |--------------------------------------------------------------------------
     */
+
+    public function alreadyRegisteredMessage(array $data, PhoneNumber $phone): ?string
+    {
+        if ($this->phoneExists($phone)) {
+            return __('This phone number is already registered.');
+        }
+
+        if (User::where('tax_id', $data['tax_id'])->exists()) {
+            return __('This tax ID is already registered to another customer.');
+        }
+
+        return null;
+    }
+
+    /**
+     * Creates the user and the BC customer together, so a BC failure leaves no half-registered user behind.
+     */
+    public function registerUser(array $data, PhoneNumber $phone, bool $passwordAlreadyHashed = false): User
+    {
+        return DB::transaction(function () use ($data, $phone, $passwordAlreadyHashed) {
+            $user = $this->createUser($data, $phone, $passwordAlreadyHashed);
+
+            $this->syncWithBusinessCentral($user);
+
+            return $user;
+        });
+    }
 
     /**
      * Create and persist the user.

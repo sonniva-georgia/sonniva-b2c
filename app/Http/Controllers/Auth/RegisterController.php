@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Rules\RecaptchaV3;
 use App\Services\Auth\RegisterService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Throwable;
 
 class RegisterController extends Controller
 {
@@ -168,11 +170,25 @@ class RegisterController extends Controller
             return back()->withErrors(['message' => $verification['message']]);
         }
 
-        // Create user
-        $user = $this->registerService->createUser($registerData, $phone);
+        $alreadyRegistered = $this->registerService->alreadyRegisteredMessage($registerData, $phone);
 
-        // Sync with Business Central
-        $this->registerService->syncWithBusinessCentral($user);
+        if ($alreadyRegistered) {
+            session()->forget(['otp', 'otp_expires_at', 'phone', 'register_data']);
+
+            return back()->withErrors(['message' => $alreadyRegistered]);
+        }
+
+        try {
+            $user = $this->registerService->registerUser($registerData, $phone);
+        } catch (UniqueConstraintViolationException) {
+            session()->forget(['otp', 'otp_expires_at', 'phone', 'register_data']);
+
+            return back()->withErrors(['message' => __('This phone number is already registered.')]);
+        } catch (Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['message' => __('Registration could not be completed. Please try again.')]);
+        }
 
         // Log in via session (web)
         Auth::login($user);

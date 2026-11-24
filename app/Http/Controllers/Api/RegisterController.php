@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\OtpVerification;
 use App\Models\User;
 use App\Services\Auth\RegisterService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class RegisterController extends Controller
 {
@@ -149,11 +151,24 @@ class RegisterController extends Controller
 
         $registrationData = $verification['registration_data'];
 
-        // Password was already hashed before storing — pass a flag so createUser() skips hashing
-        $user = $this->registerService->createUser($registrationData, $phone, passwordAlreadyHashed: true);
+        $alreadyRegistered = $this->registerService->alreadyRegisteredMessage($registrationData, $phone);
 
-        // Sync with Business Central
-        $this->registerService->syncWithBusinessCentral($user);
+        if ($alreadyRegistered) {
+            return response()->json(['message' => $alreadyRegistered], 422);
+        }
+
+        try {
+            $user = $this->registerService->registerUser($registrationData, $phone, passwordAlreadyHashed: true);
+        } catch (UniqueConstraintViolationException) {
+            return response()->json(['message' => __('This phone number is already registered.')], 422);
+        } catch (Throwable $e) {
+            report($e);
+
+            // Put the verified code back so the user can retry without a new SMS.
+            $this->registerService->storeOtpInDb($phone, $request->otp, $registrationData);
+
+            return response()->json(['message' => __('Registration could not be completed. Please try again.')], 500);
+        }
 
         // Return Sanctum token — no session, no redirect
         $token = $user->createToken('nativephp-mobile')->plainTextToken;

@@ -6,6 +6,7 @@
     "This phone number is already registered.": "Bu telefon numarası zaten kayıtlı.",
     "This phone number is not registered.": "Bu telefon numarası kayıtlı değil.",
     "This tax ID is already registered to another customer.": "Bu vergi kimlik numarası başka bir müşteriye kayıtlı.",
+    "Registration could not be completed. Please try again.": "Kayıt tamamlanamadı. Lütfen tekrar deneyin.",
     "Current password is incorrect.": "Mevcut şifre yanlış.",
     "The OTP code is required.": "Doğrulama kodu alanı zorunludur.",
     "The OTP code must be 6-digit.": "Doğrulama kodu 6 haneli olmalıdır.",

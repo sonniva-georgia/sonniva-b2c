@@ -124,3 +124,18 @@ it('requires an address when an admin registers a customer', function (?string $
     'missing' => null,
     'blank' => '   ',
 ]);
+
+it('registers a legal entity without a lastname', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin)->postJson(route('admin.customers.store'), [
+        'user_type' => 'legal_entity',
+        'name' => 'Sonniva LLC',
+        'lastname' => '',
+        'phone' => '599123456',
+        'tax_id' => '405123456',
+        'address' => 'Tbilisi, Rustaveli 1',
+    ])->assertCreated();
+
+    expect(User::where('tax_id', '405123456')->firstOrFail()->lastname)->toBeNull();
+});

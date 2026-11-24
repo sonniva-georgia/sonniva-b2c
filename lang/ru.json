@@ -6,6 +6,7 @@
     "This phone number is already registered.": "Этот номер телефона уже зарегистрирован.",
     "This phone number is not registered.": "Этот номер телефона не зарегистрирован.",
     "This tax ID is already registered to another customer.": "Этот идентификационный номер уже зарегистрирован за другим клиентом.",
+    "Registration could not be completed. Please try again.": "Не удалось завершить регистрацию. Пожалуйста, попробуйте ещё раз.",
     "Current password is incorrect.": "Текущий пароль неверен.",
     "The OTP code is required.": "Поле «Код подтверждения» обязательно.",
     "The OTP code must be 6-digit.": "Код подтверждения должен состоять из 6 цифр.",

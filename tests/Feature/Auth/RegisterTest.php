@@ -148,3 +148,38 @@ it('resends a fresh OTP', function () {
     $response->assertSessionDoesntHaveErrors();
     $response->assertSessionHas('otp', '654321');
 });
+
+it('saves no user and lets the customer retry the same code when the BC sync fails', function () {
+    mockOtpSms();
+
+    $this->mock(BusinessCentralService::class, function ($mock) {
+        $mock->shouldReceive('getCustomer')->twice()->andReturnUsing(
+            fn () => throw new RuntimeException('BC is down'),
+            fn () => ['value' => [['No' => 'C100']]],
+        );
+    });
+
+    $this->post(route('register'), validRegisterPayload());
+
+    $this->post(route('register.verify-code'), ['otp' => '123456'])
+        ->assertSessionHasErrors('message');
+    $this->assertGuest();
+    $this->assertDatabaseMissing('users', ['tax_id' => '12345678901']);
+
+    $this->post(route('register.verify-code'), ['otp' => '123456'])
+        ->assertRedirect(route('account.index'));
+    expect(User::where('tax_id', '12345678901')->count())->toBe(1);
+});
+
+it('shows an error instead of crashing when the phone was registered before verification', function () {
+    mockOtpSms();
+
+    $this->post(route('register'), validRegisterPayload());
+
+    User::factory()->create(['phone' => '+995555123456', 'phone_country' => 'GE']);
+
+    $this->post(route('register.verify-code'), ['otp' => '123456'])
+        ->assertSessionHasErrors('message');
+    $this->assertGuest();
+    expect(User::where('phone', '+995555123456')->count())->toBe(1);
+});
