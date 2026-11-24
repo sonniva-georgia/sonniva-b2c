@@ -148,7 +148,7 @@ class SyncItemsCommand extends Command
             $this->info("  → Refreshing existing item {$item['no']}");
         }
 
-        $detailUrl = "https://api.businesscentral.dynamics.com/v2.0/Production/api/smart/sonniva/v1.0/companies(dc29e11b-78aa-ee11-be38-000d3ab8f033)/itemsDetailed('{$item['no']}')"
+        $detailUrl = config('bc.api_base_url')."Production/api/smart/sonniva/v1.0/companies(dc29e11b-78aa-ee11-be38-000d3ab8f033)/itemsDetailed('{$item['no']}')"
             .'?$select=image1,image2,image3,image4,image5'
             .'&$expand=itemUnitPrices($select=price,custMinQuantity,priceGroup)';
 

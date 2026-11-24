@@ -5,11 +5,12 @@ namespace Database\Seeders;
 use App\Models\Item;
 use App\Services\BusinessCentralService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 
 class PriceListSeeder extends Seeder
 {
-    private const API_URL = "https://api.businesscentral.dynamics.com/v2.0/904668f4-6aa7-44ce-8285-5c27b33faeeb/Production/ODataV4/Company('SONNIVA')/Price_List_Lines_Excel";
+    private const API_PATH = "904668f4-6aa7-44ce-8285-5c27b33faeeb/Production/ODataV4/Company('SONNIVA')/Price_List_Lines_Excel";
 
     public function __construct(protected BusinessCentralService $bc) {}
 
@@ -51,13 +52,13 @@ class PriceListSeeder extends Seeder
 
     /**
      * @param  array<int, string>  $assetNos
-     * @return \Illuminate\Support\Collection<string, \Illuminate\Support\Collection>
+     * @return Collection<string, Collection>
      */
-    private function fetchPrices(string $token, array $assetNos): \Illuminate\Support\Collection
+    private function fetchPrices(string $token, array $assetNos): Collection
     {
         $filter = collect($assetNos)->map(fn ($no) => "Asset_No eq '{$no}'")->implode(' or ');
 
-        $url = self::API_URL.'?'.http_build_query([
+        $url = config('bc.api_base_url').self::API_PATH.'?'.http_build_query([
             '$filter' => $filter,
             '$select' => 'Asset_No,Unit_Price,Cust_Min_Quantity,PTE_Price_Group,Unit_of_Measure_Code',
         ]);

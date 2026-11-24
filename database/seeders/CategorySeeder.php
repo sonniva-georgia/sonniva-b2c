@@ -55,8 +55,7 @@ class CategorySeeder extends Seeder
     private function fetchAllCategories(string $token): Collection
     {
         $all = collect();
-        //        $url = config('bc.api_base_url') . '904668f4-6aa7-44ce-8285-5c27b33faeeb/Production/ODataV4/Company(\'SONNIVA\')/ItemCategories';
-        $url = 'https://api.businesscentral.dynamics.com/v2.0/Production/api/smart/sonniva/v1.0/companies(dc29e11b-78aa-ee11-be38-000d3ab8f033)/itemCategories?$select=code,description,parentCategory,imageBase64';
+        $url = config('bc.api_base_url').'Production/api/smart/sonniva/v1.0/companies(dc29e11b-78aa-ee11-be38-000d3ab8f033)/itemCategories?$select=code,description,parentCategory,imageBase64';
 
         do {
             $response = Http::withToken($token)->timeout(60)->get($url);
