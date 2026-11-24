@@ -189,6 +189,26 @@ database/localization/    translation source files imported with localize:import
 
 **BC access token** is cached in the `business_central_tokens` table and refreshed automatically before it expires.
 
+### Business Central endpoints
+
+Two kinds of BC URL are used, both on top of `BC_API_BASE_URL` (`https://api.businesscentral.dynamics.com/v2.0/`):
+
+- **Custom API**: `Production/api/smart/sonniva/v1.0/companies(dc29e11b-78aa-ee11-be38-000d3ab8f033)/<endpoint>`
+- **OData web services**: `904668f4-6aa7-44ce-8285-5c27b33faeeb/Production/ODataV4/Company('SONNIVA')/<endpoint>`
+
+| Endpoint | Type | Used for | Where |
+|---|---|---|---|
+| `items` | Custom API | item list: numbers, categories, names, prices, attributes, stock, services | `items:sync*`, `inventory:sync`, `services:sync`, `getItemsInventory()` |
+| `itemsDetailed` | Custom API | one item with wholesale price tiers (`itemUnitPrices`) and picture | `items:sync`, `items:sync-data`, `items:fetch-missing-images` |
+| `itemCategories` | Custom API | category tree and category images | `getItemCategoryByCode()` (admin), `CategorySeeder` |
+| `ItemUnitOfMeasureAPI` | OData | item weights | `items:sync-weights` |
+| `Item_Ledger_Entries_Excel` | OData | live stock of one item (item page, checkout check) | `calcInventory()` |
+| `Price_List_Lines_Excel` | OData | price list lines | `PriceListSeeder` |
+| `Customers` | OData | create / update / read a customer, credit limit by tax ID | `addCustomer()`, `updateCustomer()`, `getCustomerCreditInfo()` |
+| `SalesOrders` | OData | order header | `addSalesOrders()` via `SendOrderToBCJob` |
+| `SalesOrderLines` | OData | order lines (items, delivery, services) | `addSalesOrderLines()` |
+| `ShipToAddress` | OData | delivery address of the order | `addShipToAddress()` |
+
 ---
 
 ## 6. Background work: scheduler & queues
