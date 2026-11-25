@@ -51,12 +51,8 @@ class LoginController extends Controller
 
         $user = $result['user'];
 
-        if ($user->role === 'admin' || $user->role === 'manager') {
+        if ($user->can('access-admin')) {
             return to_route('admin.index');
-        }
-
-        if ($user->role === 'pricing_manager') {
-            return to_route('admin.items.index');
         }
 
         return redirect()->intended('home');

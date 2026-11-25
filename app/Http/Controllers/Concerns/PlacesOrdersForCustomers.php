@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Enums\Permission;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ trait PlacesOrdersForCustomers
     protected function resolveOrderBuyer(Request $request): User
     {
         $customerId = $request->input('customer_id');
-        $canPlaceForCustomers = $request->user()->can('place-orders-for-customers');
+        $canPlaceForCustomers = $request->user()->can(Permission::PlaceOrdersForCustomers->value);
 
         if (blank($customerId) && $canPlaceForCustomers) {
             throw ValidationException::withMessages([
@@ -52,7 +53,7 @@ trait PlacesOrdersForCustomers
             return [];
         }
 
-        abort_unless($request->user()->can('place-orders-for-customers'), 403);
+        abort_unless($request->user()->can(Permission::PlaceOrdersForCustomers->value), 403);
 
         return [[
             'service' => Service::where('no', Service::CUTTING_NO)->firstOrFail(),
@@ -70,7 +71,7 @@ trait PlacesOrdersForCustomers
             return null;
         }
 
-        abort_unless($request->user()->can('place-orders-for-customers'), 403);
+        abort_unless($request->user()->can(Permission::PlaceOrdersForCustomers->value), 403);
 
         return round($request->float('delivery_cost_override'), 2);
     }

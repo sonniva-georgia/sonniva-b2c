@@ -38,7 +38,6 @@ it('blocks a pricing manager from the rest of the admin panel', function (string
         ->{$method}(route($routeName))
         ->assertForbidden();
 })->with([
-    'dashboard' => ['get', 'admin.index'],
     'orders' => ['get', 'admin.orders.index'],
     'users' => ['get', 'admin.users.index'],
     'payments' => ['get', 'admin.payments.index'],

@@ -9,11 +9,13 @@ import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { FilterMatchMode } from '@primevue/core/api';
 import PrimeInputText from '@/Pages/PrimevueComponents/PrimeInputText.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 defineOptions({ layout: AdminLayout });
 
 const toast = useToast();
 const confirm = useConfirm();
+const { can } = usePermissions();
 
 const props = defineProps({
     orders: Object,
@@ -270,7 +272,7 @@ const rowMenus = ref({});
 function getMenuItems(order) {
     const items = [];
 
-    if (['paid', 'ready', 'dispatched', 'delivered'].includes(order.status)) {
+    if (can('orders.process') && ['paid', 'ready', 'dispatched', 'delivered'].includes(order.status)) {
         items.push({
             label:   'Send PDF',
             icon:    'pi pi-file-pdf',
@@ -278,7 +280,7 @@ function getMenuItems(order) {
         });
     }
 
-    if ((order.status === 'paid' || order.status === 'limit') && order.delivery_type !== 'office') {
+    if (can('orders.send-onway') && (order.status === 'paid' || order.status === 'limit') && order.delivery_type !== 'office') {
         items.push({
             label:   'Send to Onway',
             icon:    'pi pi-truck',
@@ -294,11 +296,13 @@ function getMenuItems(order) {
     //     });
     // }
 
-    items.push({
-        label:   'Delete',
-        icon:    'pi pi-trash',
-        command: () => confirmDelete(order),
-    });
+    if (can('orders.delete')) {
+        items.push({
+            label:   'Delete',
+            icon:    'pi pi-trash',
+            command: () => confirmDelete(order),
+        });
+    }
 
     return items;
 }
@@ -783,7 +787,7 @@ function confirmMarkDelivered(order) {
                                     />
                                 </a>
                                 <Button
-                                    v-if="data.status === 'pending'"
+                                    v-if="can('orders.process') && data.status === 'pending'"
                                     icon="pi pi-check"
                                     size="small"
                                     variant="text"
@@ -805,7 +809,7 @@ function confirmMarkDelivered(order) {
                                     v-tooltip.top="'Mark Ready'"
                                 /> -->
                                 <Button
-                                    v-if="data.status === 'paid' || data.status === 'limit'"
+                                    v-if="can('orders.process') && (data.status === 'paid' || data.status === 'limit')"
                                     icon="pi pi-truck"
                                     size="small"
                                     variant="text"
@@ -816,7 +820,7 @@ function confirmMarkDelivered(order) {
                                     v-tooltip.top="'Mark as Dispatched'"
                                 />
                                 <Button
-                                    v-if="data.status === 'dispatched'"
+                                    v-if="can('orders.process') && data.status === 'dispatched'"
                                     icon="pi pi-verified"
                                     size="small"
                                     variant="text"
@@ -827,7 +831,7 @@ function confirmMarkDelivered(order) {
                                     v-tooltip.top="'Mark as Delivered'"
                                 />
                                 <Button
-                                    v-if="data.status === 'pending'"
+                                    v-if="can('orders.process') && data.status === 'pending'"
                                     icon="pi pi-times"
                                     size="small"
                                     variant="text"
@@ -837,21 +841,23 @@ function confirmMarkDelivered(order) {
                                     @click="confirmStatusChange(data, 'cancelled')"
                                     v-tooltip.top="'Cancel'"
                                 />
-                                <Button
-                                    icon="pi pi-ellipsis-v"
-                                    size="small"
-                                    variant="text"
-                                    rounded
-                                    severity="secondary"
-                                    aria-haspopup="true"
-                                    @click="(e) => rowMenus[data.id].toggle(e)"
-                                />
-                                <Menu
-                                    :ref="(el) => { if (el) rowMenus[data.id] = el }"
-                                    :model="getMenuItems(data)"
-                                    popup
-                                    class="text-sm"
-                                />
+                                <template v-if="getMenuItems(data).length">
+                                    <Button
+                                        icon="pi pi-ellipsis-v"
+                                        size="small"
+                                        variant="text"
+                                        rounded
+                                        severity="secondary"
+                                        aria-haspopup="true"
+                                        @click="(e) => rowMenus[data.id].toggle(e)"
+                                    />
+                                    <Menu
+                                        :ref="(el) => { if (el) rowMenus[data.id] = el }"
+                                        :model="getMenuItems(data)"
+                                        popup
+                                        class="text-sm"
+                                    />
+                                </template>
                             </div>
                         </template>
                     </Column>

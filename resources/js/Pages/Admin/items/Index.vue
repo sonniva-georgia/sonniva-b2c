@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { usePage } from '@inertiajs/vue3'
+import { usePermissions } from '@/composables/usePermissions'
 import AdminLayout from '../AdminLayout.vue'
 import ManageItemsTab from './ManageItemsTab.vue'
 import SyncCategoriesTab from './SyncCategoriesTab.vue'
@@ -9,14 +9,14 @@ import ManageItemKeywordsTab from './ManageItemKeywordsTab.vue'
 defineOptions({ layout: AdminLayout })
 
 const activeTab = ref('0')
-const isPricingManager = usePage().props.isPricingManager
+const { can } = usePermissions()
 </script>
 
 <template>
     <div class="p-4 sm:p-6 space-y-4">
         <h1 class="text-xl font-bold text-gray-900">Manage Items</h1>
 
-        <div v-if="isPricingManager" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div v-if="!can('categories.manage')" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <ManageItemsTab />
         </div>
 

@@ -5,9 +5,11 @@ import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { formatDiscount } from '@/utils/numberFormat.js';
 import PrimeInputText from '@/Pages/PrimevueComponents/PrimeInputText.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 const toast = useToast();
 const confirm = useConfirm();
+const { can } = usePermissions();
 
 const visible = ref(false);
 const loading = ref(false);
@@ -346,7 +348,7 @@ const providerLabel = {
             <!-- Actions -->
             <div class="flex gap-2 flex-wrap pt-1">
                 <Button
-                    v-if="order.status === 'pending'"
+                    v-if="can('orders.process') && order.status === 'pending'"
                     label="Mark Paid"
                     icon="pi pi-check"
                     severity="info"
@@ -362,7 +364,7 @@ const providerLabel = {
                     @click="confirmStatusChange('ready')"
                 /> -->
                 <Button
-                    v-if="order.status === 'paid'"
+                    v-if="can('orders.process') && order.status === 'paid'"
                     label="Mark Dispatched"
                     icon="pi pi-truck"
                     severity="success"
@@ -370,7 +372,7 @@ const providerLabel = {
                     @click="openDispatchDialog"
                 />
                 <Button
-                    v-if="order.status === 'dispatched'"
+                    v-if="can('orders.process') && order.status === 'dispatched'"
                     label="Mark Delivered"
                     icon="pi pi-verified"
                     severity="success"
@@ -378,7 +380,7 @@ const providerLabel = {
                     @click="confirmStatusChange('delivered')"
                 />
                 <Button
-                    v-if="!['cancelled', 'ready', 'delivered'].includes(order.status)"
+                    v-if="can('orders.process') && !['cancelled', 'ready', 'delivered'].includes(order.status)"
                     label="Cancel Order"
                     icon="pi pi-times"
                     severity="danger"

@@ -25,6 +25,8 @@ class User extends Authenticatable
 
     protected $keyType = 'string';
 
+    public const array STAFF_ROLES = ['admin', 'manager', 'pricing_manager', 'cashier'];
+
     /**
      * The attributes that are mass assignable.
      *

@@ -8,6 +8,7 @@ use App\Services\Account\DeleteAccountService;
 use App\Services\BusinessCentralService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -59,7 +60,7 @@ class AccountController extends Controller
 
     public function update(Request $request, User $user)
     {
-        abort_unless($user->id === Auth::id() || Auth::user()->role === 'admin', 403);
+        Gate::authorize('edit-user', $user);
 
         $phoneChanged = $request->input('phone') !== $user->getRawOriginal('phone');
 
@@ -89,7 +90,7 @@ class AccountController extends Controller
             }
         }
 
-        if (Auth::user()->role === 'admin') {
+        if (Auth::user()->can('edit-user-benefits', $user)) {
             $validated = array_merge($validated, $request->only([
                 'is_handyman',
                 'is_entrepreneur',

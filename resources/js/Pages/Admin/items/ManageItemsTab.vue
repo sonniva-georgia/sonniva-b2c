@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { router, usePage } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { useToast } from 'primevue/usetoast'
 import { useDebounceFn } from '@vueuse/core'
 import axios from 'axios'
@@ -8,9 +8,10 @@ import PrimeInputText from '@/Pages/PrimevueComponents/PrimeInputText.vue'
 import ManageItemDialog from './ManageItemDialog.vue'
 import ManageItemDetailsDialog from './ManageItemDetailsDialog.vue'
 import ItemsListing from './ItemsListing.vue'
+import { usePermissions } from '@/composables/usePermissions'
 
 const toast = useToast()
-const isPricingManager = usePage().props.isPricingManager
+const { can } = usePermissions()
 
 /* ---------------- Item video links ---------------- */
 const query = ref('')
@@ -188,7 +189,7 @@ function fetchMissingImages() {
             />
         </ul>
 
-        <template v-if="!isPricingManager">
+        <template v-if="can('items.sync')">
             <hr class="my-6 border-gray-100" />
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

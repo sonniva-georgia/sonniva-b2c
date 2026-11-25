@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Permission;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\BusinessCentralService;
@@ -38,7 +39,7 @@ class CheckoutController extends Controller
 
         return Inertia::render('Checkout/Index', [
             'cartItems' => $cartItems,
-            'cuttingService' => $request->user()->can('place-orders-for-customers')
+            'cuttingService' => $request->user()->can(Permission::PlaceOrdersForCustomers->value)
                 ? Service::where('no', Service::CUTTING_NO)->first(['no', 'name', 'unit_price'])
                 : null,
         ]);
@@ -67,7 +68,7 @@ class CheckoutController extends Controller
         $user = $request->user();
 
         if ($request->filled('customer_id')) {
-            abort_unless($request->user()->can('place-orders-for-customers'), 403);
+            abort_unless($request->user()->can(Permission::PlaceOrdersForCustomers->value), 403);
             $user = User::where('role', 'user')->findOrFail($request->input('customer_id'));
         }
 

@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminPaymentController;
 use App\Http\Controllers\Admin\AdminStockNotificationController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -78,83 +79,103 @@ Route::middleware(['auth', NoIndexMiddleware::class])->group(function () {
      * Admin Routes
      * *****************************************************************************************************************/
     Route::name('admin.')->prefix('admin')->middleware(['can:access-admin'])->group(function () {
-        // ******** Admin Users Controllers ********//
         Route::get('/', [AdminController::class, 'index'])->name('index');
 
         // ******** Admin Orders Controllers ********//
-        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
-        Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
-        Route::put('/orders/{order}/approve', [AdminOrderController::class, 'approve'])->name('orders.approve');
-        Route::put('/orders/{order}/ready', [AdminOrderController::class, 'markAsReady'])->name('orders.ready');
-        Route::put('/orders/{order}/dispatch', [AdminOrderController::class, 'markAsDispatched'])->name('orders.dispatch');
-        Route::put('/orders/{order}/deliver', [AdminOrderController::class, 'markAsDelivered'])->name('orders.deliver');
-        Route::put('/orders/{order}/cancel', [AdminOrderController::class, 'cancel'])->name('orders.cancel');
-        Route::post('/orders/{order}/send-pdf', [AdminOrderController::class, 'sendPdf'])->name('orders.send-pdf');
-        Route::post('/orders/{order}/send-onway', [AdminOrderController::class, 'sendToOnway'])->name('orders.send-onway');
-        Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
+        Route::middleware('can:orders.view')->group(function () {
+            Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+            Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+        });
+
+        Route::middleware('can:orders.process')->group(function () {
+            Route::put('/orders/{order}/approve', [AdminOrderController::class, 'approve'])->name('orders.approve');
+            Route::put('/orders/{order}/ready', [AdminOrderController::class, 'markAsReady'])->name('orders.ready');
+            Route::put('/orders/{order}/dispatch', [AdminOrderController::class, 'markAsDispatched'])->name('orders.dispatch');
+            Route::put('/orders/{order}/deliver', [AdminOrderController::class, 'markAsDelivered'])->name('orders.deliver');
+            Route::put('/orders/{order}/cancel', [AdminOrderController::class, 'cancel'])->name('orders.cancel');
+            Route::post('/orders/{order}/send-pdf', [AdminOrderController::class, 'sendPdf'])->name('orders.send-pdf');
+        });
+
+        Route::post('/orders/{order}/send-onway', [AdminOrderController::class, 'sendToOnway'])->name('orders.send-onway')->can('orders.send-onway');
+        Route::delete('/orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy')->can('orders.delete');
 
         // ******** Admin Items ********//
-        Route::post('/items/sync', [AdminItemController::class, 'syncItems'])->name('items.sync');
-        Route::post('/items/sync-category', [AdminItemController::class, 'syncCategory'])->name('items.sync-category');
-        Route::post('/items/sync-attributes', [AdminItemController::class, 'syncAttributes'])->name('items.sync-attributes');
-        Route::post('/items/fetch-missing-images', [AdminItemController::class, 'fetchMissingImages'])->name('items.fetch-missing-images');
-        Route::post('/items/sync-inventory', [AdminItemController::class, 'syncInventory'])->name('items.sync-inventory');
-        Route::get('/categories/search', [AdminItemController::class, 'searchCategories'])->name('categories.search');
-        Route::post('/categories/{category}/fetch-image', [AdminItemController::class, 'updateCategoryImage'])->name('categories.fetch-image');
-        Route::get('/categories/{category}/keywords', [AdminItemController::class, 'getCategoryKeywords'])->name('categories.keywords.show');
-        Route::post('/categories/{category}/keywords', [AdminItemController::class, 'updateCategoryKeywords'])->name('categories.keywords.update');
+        Route::middleware('can:items.manage')->group(function () {
+            Route::get('/items', [AdminItemController::class, 'index'])->name('items.index');
+            Route::get('/items/search', [AdminItemController::class, 'search'])->name('items.search');
+            Route::get('/items/managed', [AdminItemController::class, 'managed'])->name('items.managed');
+            Route::put('/items/{item}', [AdminItemController::class, 'update'])->name('items.update');
+            Route::get('/items/{item}/details', [AdminItemController::class, 'getDetails'])->name('items.details.show');
+            Route::put('/items/{item}/details', [AdminItemController::class, 'updateDetails'])->name('items.details.update');
+            Route::get('/items/liquidation', [AdminItemController::class, 'liquidation'])->name('items.liquidation');
+            Route::post('/items/{item}/liquidation', [AdminItemController::class, 'toggleLiquidation'])->name('items.liquidation.toggle');
+        });
+
+        Route::middleware('can:items.sync')->group(function () {
+            Route::post('/items/sync', [AdminItemController::class, 'syncItems'])->name('items.sync');
+            Route::post('/items/sync-attributes', [AdminItemController::class, 'syncAttributes'])->name('items.sync-attributes');
+            Route::post('/items/fetch-missing-images', [AdminItemController::class, 'fetchMissingImages'])->name('items.fetch-missing-images');
+            Route::post('/items/sync-inventory', [AdminItemController::class, 'syncInventory'])->name('items.sync-inventory');
+        });
+
+        Route::middleware('can:categories.manage')->group(function () {
+            Route::post('/items/sync-category', [AdminItemController::class, 'syncCategory'])->name('items.sync-category');
+            Route::get('/categories/search', [AdminItemController::class, 'searchCategories'])->name('categories.search');
+            Route::post('/categories/{category}/fetch-image', [AdminItemController::class, 'updateCategoryImage'])->name('categories.fetch-image');
+            Route::get('/categories/{category}/keywords', [AdminItemController::class, 'getCategoryKeywords'])->name('categories.keywords.show');
+            Route::post('/categories/{category}/keywords', [AdminItemController::class, 'updateCategoryKeywords'])->name('categories.keywords.update');
+        });
 
         // ******** Admin Payments ********//
-        Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');
-        Route::get('/payments/export', [AdminPaymentController::class, 'export'])->name('payments.export');
+        Route::middleware('can:payments.view')->group(function () {
+            Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');
+            Route::get('/payments/export', [AdminPaymentController::class, 'export'])->name('payments.export');
+        });
 
         // ******** Admin Stock Notifications ********//
-        Route::get('/stock-notifications', [AdminStockNotificationController::class, 'index'])->name('stock-notifications.index');
-        Route::patch('/stock-notifications/{stockNotification}/toggle-called', [AdminStockNotificationController::class, 'toggleCalled'])->name('stock-notifications.toggle-called');
-        Route::delete('/stock-notifications/{stockNotification}', [AdminStockNotificationController::class, 'destroy'])->name('stock-notifications.destroy');
+        Route::middleware('can:stock-notifications.manage')->group(function () {
+            Route::get('/stock-notifications', [AdminStockNotificationController::class, 'index'])->name('stock-notifications.index');
+            Route::patch('/stock-notifications/{stockNotification}/toggle-called', [AdminStockNotificationController::class, 'toggleCalled'])->name('stock-notifications.toggle-called');
+            Route::delete('/stock-notifications/{stockNotification}', [AdminStockNotificationController::class, 'destroy'])->name('stock-notifications.destroy');
+        });
 
         // ******** Admin Analytics ********//
-        Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics.index');
+        Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics.index')->can('analytics.view');
 
-        // ******** Admin Home Page Banners ********//
-        Route::get('/home-page', [AdminBannerController::class, 'index'])->name('home-page.index');
-        Route::post('/home-page/banners', [AdminBannerController::class, 'store'])->name('home-page.banners.store');
-        Route::put('/home-page/banners/reorder', [AdminBannerController::class, 'reorder'])->name('home-page.banners.reorder');
-        Route::delete('/home-page/banners/{banner}', [AdminBannerController::class, 'destroy'])->name('home-page.banners.destroy');
-        Route::post('/home-page/banners/{banner}/mobile-image', [AdminBannerController::class, 'storeMobileImage'])->name('home-page.banners.mobile-image.store');
-        Route::delete('/home-page/banners/{banner}/mobile-image', [AdminBannerController::class, 'destroyMobileImage'])->name('home-page.banners.mobile-image.destroy');
+        // ******** Admin Home Page ********//
+        Route::middleware('can:home-page.manage')->group(function () {
+            Route::get('/home-page', [AdminBannerController::class, 'index'])->name('home-page.index');
+            Route::post('/home-page/banners', [AdminBannerController::class, 'store'])->name('home-page.banners.store');
+            Route::put('/home-page/banners/reorder', [AdminBannerController::class, 'reorder'])->name('home-page.banners.reorder');
+            Route::delete('/home-page/banners/{banner}', [AdminBannerController::class, 'destroy'])->name('home-page.banners.destroy');
+            Route::post('/home-page/banners/{banner}/mobile-image', [AdminBannerController::class, 'storeMobileImage'])->name('home-page.banners.mobile-image.store');
+            Route::delete('/home-page/banners/{banner}/mobile-image', [AdminBannerController::class, 'destroyMobileImage'])->name('home-page.banners.mobile-image.destroy');
 
-        // ******** Admin Home Sections ********//
-        Route::post('/home-page/sections', [AdminHomeSectionController::class, 'store'])->name('home-page.sections.store');
-        Route::put('/home-page/sections/{homeSection}', [AdminHomeSectionController::class, 'update'])->name('home-page.sections.update');
-        Route::patch('/home-page/sections/{homeSection}/toggle-hidden', [AdminHomeSectionController::class, 'toggleHidden'])->name('home-page.sections.toggle-hidden');
-        Route::delete('/home-page/sections/{homeSection}', [AdminHomeSectionController::class, 'destroy'])->name('home-page.sections.destroy');
-        Route::post('/home-page/sections/{homeSection}/items', [AdminHomeSectionController::class, 'attachItem'])->name('home-page.sections.items.store');
-        Route::delete('/home-page/sections/{homeSection}/items/{item}', [AdminHomeSectionController::class, 'detachItem'])->name('home-page.sections.items.destroy');
-        Route::post('/home-page/sections/{homeSection}/images', [AdminHomeSectionController::class, 'storeImage'])->name('home-page.sections.images.store');
-        Route::put('/home-page/sections/{homeSection}/images/{homeSectionImage}', [AdminHomeSectionController::class, 'updateImage'])->name('home-page.sections.images.update');
-        Route::delete('/home-page/sections/{homeSection}/images/{homeSectionImage}', [AdminHomeSectionController::class, 'destroyImage'])->name('home-page.sections.images.destroy');
+            Route::post('/home-page/sections', [AdminHomeSectionController::class, 'store'])->name('home-page.sections.store');
+            Route::put('/home-page/sections/{homeSection}', [AdminHomeSectionController::class, 'update'])->name('home-page.sections.update');
+            Route::patch('/home-page/sections/{homeSection}/toggle-hidden', [AdminHomeSectionController::class, 'toggleHidden'])->name('home-page.sections.toggle-hidden');
+            Route::delete('/home-page/sections/{homeSection}', [AdminHomeSectionController::class, 'destroy'])->name('home-page.sections.destroy');
+            Route::post('/home-page/sections/{homeSection}/items', [AdminHomeSectionController::class, 'attachItem'])->name('home-page.sections.items.store');
+            Route::delete('/home-page/sections/{homeSection}/items/{item}', [AdminHomeSectionController::class, 'detachItem'])->name('home-page.sections.items.destroy');
+            Route::post('/home-page/sections/{homeSection}/images', [AdminHomeSectionController::class, 'storeImage'])->name('home-page.sections.images.store');
+            Route::put('/home-page/sections/{homeSection}/images/{homeSectionImage}', [AdminHomeSectionController::class, 'updateImage'])->name('home-page.sections.images.update');
+            Route::delete('/home-page/sections/{homeSection}/images/{homeSectionImage}', [AdminHomeSectionController::class, 'destroyImage'])->name('home-page.sections.images.destroy');
+        });
 
         // ******** Admin Users Controllers ********//
-        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
-        Route::get('/users/export', [AdminUserController::class, 'export'])->name('users.export');
-        Route::get('/user/{user}', [AdminUserController::class, 'edit'])->name('users.get-user');
-        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.delete');
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index')->can('users.view');
+        Route::get('/users/export', [AdminUserController::class, 'export'])->name('users.export')->can('users.view');
+        Route::get('/user/{user}', [AdminUserController::class, 'edit'])->name('users.get-user')->can('edit-user', 'user');
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.delete')->can('delete-user', 'user');
+
+        // ******** Role Permissions ********//
+        Route::middleware('can:manage-permissions')->group(function () {
+            Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+            Route::put('/permissions', [PermissionController::class, 'update'])->name('permissions.update');
+        });
     });
 
-    Route::name('admin.')->prefix('admin')->middleware(['can:manage-item-pricing'])->group(function () {
-        Route::get('/items', [AdminItemController::class, 'index'])->name('items.index');
-        Route::get('/items/search', [AdminItemController::class, 'search'])->name('items.search');
-        Route::get('/items/managed', [AdminItemController::class, 'managed'])->name('items.managed');
-        Route::put('/items/{item}', [AdminItemController::class, 'update'])->name('items.update');
-        Route::get('/items/{item}/details', [AdminItemController::class, 'getDetails'])->name('items.details.show');
-        Route::put('/items/{item}/details', [AdminItemController::class, 'updateDetails'])->name('items.details.update');
-        Route::get('/items/liquidation', [AdminItemController::class, 'liquidation'])->name('items.liquidation');
-        Route::post('/items/{item}/liquidation', [AdminItemController::class, 'toggleLiquidation'])->name('items.liquidation.toggle');
-    });
-
-    // Customer picker used by an admin to place an order on a customer's behalf at checkout.
-    Route::middleware('can:place-orders-for-customers')->name('admin.customers.')->prefix('admin/customers')->group(function () {
+    Route::middleware('can:orders.place-for-customers')->name('admin.customers.')->prefix('admin/customers')->group(function () {
         Route::get('/', [AdminCustomerController::class, 'index'])->name('index');
         Route::post('/', [AdminCustomerController::class, 'store'])->name('store');
     });

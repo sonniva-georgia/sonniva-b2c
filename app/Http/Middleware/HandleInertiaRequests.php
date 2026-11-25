@@ -2,9 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Permission;
 use App\Models\Category;
 use App\Models\Order;
+use App\Models\RolePermission;
 use App\Models\StockNotification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -41,7 +44,8 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $isAdmin = auth()?->user()?->role === 'admin';
+        $user = $request->user();
+        $isAdmin = $user?->role === 'admin';
         $isCashier = in_array(auth()?->user()?->role, ['cashier']);
 
         $categories = fn () => Cache::rememberForever('nav_categories_'.app()->getLocale(), fn () => Category::navTree());
@@ -61,8 +65,12 @@ class HandleInertiaRequests extends Middleware
             'isLoggedIn' => Auth::check(),
             'isAdmin' => $isAdmin,
             'isCashier' => $isCashier,
-            'isPricingManager' => auth()?->user()?->role === 'pricing_manager',
-            'isStaff' => in_array(auth()?->user()?->role, ['admin', 'manager', 'pricing_manager', 'cashier'], true),
+            'isStaff' => in_array($user?->role, User::STAFF_ROLES, true),
+            'can' => fn () => match (true) {
+                $isAdmin => array_column(Permission::cases(), 'value'),
+                in_array($user?->role, RolePermission::EDITABLE_ROLES, true) => RolePermission::permissionsOf($user->role),
+                default => [],
+            },
             'user' => Auth::user(),
 
             // ── Wishlist IDs shared to every page ──────────────────────────
@@ -94,11 +102,11 @@ class HandleInertiaRequests extends Middleware
                 ];
             },
 
-            'unseenStockCount' => $isAdmin
+            'unseenStockCount' => $user?->can(Permission::ManageStockNotifications->value)
                 ? fn () => StockNotification::whereNull('seen_at')->count()
                 : null,
 
-            'unseenOrdersCount' => $isAdmin
+            'unseenOrdersCount' => $user?->can(Permission::ViewOrders->value)
                 ? fn () => Order::whereNull('seen_at')->whereIn('status', ['pending', 'limit', 'paid'])->count()
                 : null,
 

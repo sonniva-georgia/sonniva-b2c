@@ -10,13 +10,14 @@ import { FilterMatchMode } from '@primevue/core/api';
 import { useDebounceFn } from '@vueuse/core';
 import EditUser from "../../Account/Index.vue";
 import PrimeInputText from '@/Pages/PrimevueComponents/PrimeInputText.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 defineOptions({ layout: AdminLayout });
 
 const confirm = useConfirm();
 const toast = useToast();
 
-const isAdmin = computed(() => usePage().props.isAdmin);
+const { can } = usePermissions();
 
 const props = defineProps({
     users: Object,
@@ -223,11 +224,11 @@ function userProfileUpdated(status) {
 
                 <Column field="created_at" header="Joined" style="min-width: 7rem" />
 
-                <Column header="Actions" v-if="isAdmin">
+                <Column header="Actions" v-if="can('users.edit') || can('users.delete')">
                     <template #body="slotProps">
                         <div class="flex gap-2">
-                            <Button @click="editUser(slotProps.data.id)" icon="pi pi-user-edit" severity="info" size="small" variant="text" raised rounded aria-label="Edit" />
-                            <Button @click="deleteUser(slotProps.data.id)" icon="pi pi-trash" severity="danger" size="small" variant="text" raised rounded aria-label="Delete" />
+                            <Button v-if="can('users.edit')" @click="editUser(slotProps.data.id)" icon="pi pi-user-edit" severity="info" size="small" variant="text" raised rounded aria-label="Edit" />
+                            <Button v-if="can('users.delete')" @click="deleteUser(slotProps.data.id)" icon="pi pi-trash" severity="danger" size="small" variant="text" raised rounded aria-label="Delete" />
                         </div>
                     </template>
                 </Column>

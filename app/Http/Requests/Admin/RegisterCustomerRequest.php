@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -10,7 +11,7 @@ class RegisterCustomerRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('place-orders-for-customers') ?? false;
+        return $this->user()?->can(Permission::PlaceOrdersForCustomers->value) ?? false;
     }
 
     /**

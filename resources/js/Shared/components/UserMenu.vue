@@ -17,8 +17,7 @@ const displayName = computed(() => {
 })
 
 const menuItems = computed(() => [
-    ...(page.props.user?.role === 'admin' ? [{ label: t('nav.adminPanel'), icon: 'pi-shield', href: '/admin' }] : []),
-    ...(page.props.isPricingManager ? [{ label: t('nav.adminPanel'), icon: 'pi-shield', href: '/admin/items' }] : []),
+    ...(page.props.can?.length ? [{ label: t('nav.adminPanel'), icon: 'pi-shield', href: '/admin' }] : []),
     { label: t('nav.myAccount'), icon: 'pi-user', route: 'account.index' },
     { label: t('nav.myOrders'), icon: 'pi-tags', route: 'user-orders.index' },
 ])

@@ -21,11 +21,11 @@ const page = usePage()
 const toast = useToast()
 const { getQuantity, hasService } = useCart()
 
-// An admin can place the order on a customer's behalf; pricing, delivery and the
-// invoice then follow that customer, not the admin.
-const isAdmin = computed(() => page.props.isAdmin)
+// Staff can place the order on a customer's behalf; pricing, delivery and the
+// invoice then follow that customer, not the staff member.
+const canPlaceForCustomers = computed(() => page.props.can?.includes('orders.place-for-customers') ?? false)
 const selectedCustomer = ref(null)
-const orderingUser = computed(() => (isAdmin.value ? selectedCustomer.value : null) ?? page.props.user)
+const orderingUser = computed(() => (canPlaceForCustomers.value ? selectedCustomer.value : null) ?? page.props.user)
 
 const isVip = computed(() => orderingUser.value?.can_view_vip ?? false)
 const canViewWholesales = computed(() => orderingUser.value?.can_view_wholesales ?? false)
@@ -428,7 +428,7 @@ async function fetchCreditInfo() {
     creditLoading.value = true
     try {
         const res = await axios.get(route('checkout.credit-info'), {
-            params: isAdmin.value && selectedCustomer.value ? { customer_id: selectedCustomer.value.id } : {},
+            params: canPlaceForCustomers.value && selectedCustomer.value ? { customer_id: selectedCustomer.value.id } : {},
         })
         creditInfo.value = res.data
     } catch {
@@ -455,7 +455,7 @@ const canPayWithLimit = computed(() => {
 
 const payButtonDisabled = computed(() =>
     loading.value ||
-    (isAdmin.value && !selectedCustomer.value) ||
+    (canPlaceForCustomers.value && !selectedCustomer.value) ||
     (selectedProvider.value?.code === 'limit' && !canPayWithLimit.value) ||
     hasOfficeInventoryIssue.value
 )
@@ -507,7 +507,7 @@ function validate() {
     clearErrors()
     let valid = true
 
-    if (isAdmin.value && !selectedCustomer.value) {
+    if (canPlaceForCustomers.value && !selectedCustomer.value) {
         errors.customer = t('customerPicker.selectCustomerFirst')
         valid = false
     }
@@ -582,7 +582,7 @@ function initiatePayment() {
         comment:          form.comment,
         provider:         selectedProvider.value.code,
         cart_ids: items.value.map(c => c.id),
-        customer_id: isAdmin.value ? selectedCustomer.value?.id ?? null : null,
+        customer_id: canPlaceForCustomers.value ? selectedCustomer.value?.id ?? null : null,
         cutting_quantity: cuttingQuantity.value,
         delivery_cost_override: deliveryCostOverride.value,
     }
@@ -652,7 +652,7 @@ function initiatePayment() {
                 <div class="lg:col-span-2 space-y-4">
 
                     <!-- Admin: place the order on a customer's behalf -->
-                    <div v-if="isAdmin" class="bg-white rounded-2xl border shadow-sm p-6" :class="errors.customer ? 'border-red-300' : 'border-gray-100'">
+                    <div v-if="canPlaceForCustomers" class="bg-white rounded-2xl border shadow-sm p-6" :class="errors.customer ? 'border-red-300' : 'border-gray-100'">
                         <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                             <i class="pi pi-user text-brand-500"></i>
                             {{ $t('customerPicker.selectCustomer') }}
@@ -1147,7 +1147,7 @@ function initiatePayment() {
                                         <template v-else-if="deliveryCost === 0">{{ $t('checkout.free') }}</template>
                                         <template v-else>{{ formatted(deliveryCost) }} ₾</template>
                                     </span>
-                                    <template v-if="isAdmin && deliveryCost !== null">
+                                    <template v-if="canPlaceForCustomers && deliveryCost !== null">
                                         <button
                                             type="button"
                                             class="text-gray-400 hover:text-brand-500 transition-colors cursor-pointer"

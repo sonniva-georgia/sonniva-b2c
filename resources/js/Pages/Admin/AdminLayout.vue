@@ -4,9 +4,11 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, inject } from 'vue';
 
 const route = inject('route')
 import Navbar from '@/Shared/menu/Navbar.vue';
+import { usePermissions } from '@/composables/usePermissions';
 
 const sidebarOpen = ref(false);
 const page = usePage();
+const { can } = usePermissions();
 
 usePoll(10000, {
     only: ['unseenOrdersCount', 'unseenStockCount'],
@@ -31,44 +33,57 @@ const allMenuItems = computed(() => [
         name: 'Orders',
         route: 'admin.orders.index',
         icon: 'pi-shopping-cart',
+        permission: 'orders.view',
         badge: unseenOrdersCount.value || null,
     },
     {
         name: 'Users',
         route: 'admin.users.index',
         icon: 'pi-users',
+        permission: 'users.view',
     },
     {
         name: 'Payments',
         route: 'admin.payments.index',
         icon: 'pi-credit-card',
+        permission: 'payments.view',
     },
     {
         name: 'Stock Requests',
         route: 'admin.stock-notifications.index',
         icon: 'pi-bell',
+        permission: 'stock-notifications.manage',
         badge: unseenStockCount.value || null,
     },
     {
         name: 'Analytics',
         route: 'admin.analytics.index',
         icon: 'pi-chart-line',
+        permission: 'analytics.view',
     },
     {
         name: 'Manage Items',
         route: 'admin.items.index',
         icon: 'pi-box',
+        permission: 'items.manage',
     },
     {
         name: 'Home Page',
         route: 'admin.home-page.index',
         icon: 'pi-image',
+        permission: 'home-page.manage',
+    },
+    {
+        name: 'Permissions',
+        route: 'admin.permissions.index',
+        icon: 'pi-lock',
+        adminOnly: true,
     },
 ]);
 
-const menuItems = computed(() => page.props.isPricingManager
-    ? allMenuItems.value.filter(item => item.route === 'admin.items.index')
-    : allMenuItems.value);
+const menuItems = computed(() => allMenuItems.value.filter(item =>
+    item.adminOnly ? page.props.isAdmin : can(item.permission)
+));
 
 </script>
 
